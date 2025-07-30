@@ -1,0 +1,6 @@
+{
+  "devDependencies": {
+    "@openzeppelin/contracts": "^4.8.1"
+  },
+  "packageManager": "yarn@1.22.22"
+}
