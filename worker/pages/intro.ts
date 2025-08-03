@@ -1,4 +1,5 @@
 import { h } from '@webtaku/h';
+import { bundle } from './bundle';
 import { head } from './head';
 import { top } from './top';
 
@@ -8,7 +9,7 @@ function intro() {
     head('The Gods - Gaia Protocol'),
     h(
       'body.bg-gray-950.text-gray-300.sl-theme-dark',
-      top(),
+      top,
 
       // Hero
       h('section.relative.flex.flex-col.items-center.justify-center.text-center.h-[70vh].space-y-6.px-4',
@@ -99,7 +100,9 @@ function intro() {
             target: '_blank'
           }, 'Follow on X')
         )
-      )
+      ),
+
+      bundle,
     )
   );
 }
