@@ -1,4 +1,5 @@
 const path = require('path');
+const webpack = require('webpack');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
 module.exports = {
@@ -50,6 +51,15 @@ module.exports = {
   },
   plugins: [
     new MiniCssExtractPlugin({ filename: 'styles.css' }),
+    new webpack.DefinePlugin({
+      API_BASE_URL: JSON.stringify(
+        process.env.NODE_ENV === 'production'
+          ? 'https://api.gaia.cc'
+          : 'http://localhost:8080'
+      ),
+      APP_NAME: JSON.stringify('The Gods'),
+      WALLET_CONNECT_PROJECT_ID: JSON.stringify('b0e589b0a6a700bc7a03008a3940666b'),
+    }),
   ],
   mode: 'development'
 };

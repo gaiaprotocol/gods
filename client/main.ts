@@ -1,1 +1,3 @@
-console.log('Yo Man.');
+import { createRainbowKit } from '@gaiaprotocol/client-common';
+
+document.body.appendChild(createRainbowKit());
