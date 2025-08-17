@@ -1,4 +1,5 @@
 import { handleLogin, handleNonce, handleValidateToken } from '@gaiaprotocol/worker-common';
+import { godDetail } from './pages/god-detail';
 import { intro } from "./pages/intro";
 import { myGods } from './pages/my-gods';
 
@@ -14,6 +15,8 @@ export default {
       return new Response(intro(), { headers: { 'Content-Type': 'text/html' } });
     } else if (url.pathname === '/my-gods') {
       return new Response(myGods(), { headers: { 'Content-Type': 'text/html' } });
+    } else if (url.pathname.startsWith('/god/')) {
+      return new Response(godDetail(), { headers: { 'Content-Type': 'text/html' } });
     }
 
     return new Response('Not Found', { status: 404 });

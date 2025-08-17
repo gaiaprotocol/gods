@@ -83,3 +83,26 @@ export async function fetchNftsByIds(params: {
   const items: HeldNft[] = await res.json();
   return items;
 }
+
+type NftData = {
+  collection: string;
+  id: number;
+  name: string;
+  description?: string;
+  image: string;
+  external_url?: string;
+  animation_url?: string;
+  traits?: { [traitName: string]: string | number };
+  parts?: { [partName: string]: string | number };
+  holder: string;
+};
+
+export async function fetchNftDetail(id: string): Promise<NftData> {
+  const res = await fetch(`${GAIA_API_BASE_URI}/nft/gaia-protocol-gods/${id}`);
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    console.error(`fetchNftDetail failed: ${res.status} ${res.statusText}`, text);
+    throw new Error(`Failed to fetch NFT detail: ${res.status}`);
+  }
+  return await res.json();
+}
