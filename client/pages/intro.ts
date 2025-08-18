@@ -23,10 +23,17 @@ document.body.appendChild(createRainbowKit());
 const connectButtonContainer = document.getElementById('connect-button-container')!;
 
 // -----------------------------------------------------------------------------
-// 인증 상태 (전역)
+// 옵션 / 전역 상태
 // -----------------------------------------------------------------------------
-let authInitialized = false;      // validateToken 완료 여부
-let requireSignature = true;      // 연결 시 서명 강제 여부
+/**
+ * 연결 직후 자동으로 서명 모달을 띄울지 여부
+ * true  : 연결되면 자동으로 모달을 띄워 로그인 유도
+ * false : 상단의 [Sign & Continue] 버튼을 유저가 직접 클릭
+ */
+const AUTO_PROMPT_ON_CONNECT = false;
+
+let authInitialized = false;                     // validateToken 완료 여부
+let requireSignature = true;                     // 연결 시 서명 요구 여부 (토큰 없으면 true)
 let lastKnownAddress: `0x${string}` | null = null; // UI 표시용 캐시
 
 // -----------------------------------------------------------------------------
@@ -44,8 +51,8 @@ async function signAndLogin(): Promise<void> {
   const address = ensureWalletConnected();
   const signature = await signMessage(address);
   const token = await requestLogin(address, signature);
-  tokenManager.set(token, address);
 
+  tokenManager.set(token, address);
   requireSignature = false;
   lastKnownAddress = address;
 
@@ -57,7 +64,7 @@ async function signAndLogin(): Promise<void> {
 }
 
 // -----------------------------------------------------------------------------
-// 서명 모달
+// 서명 모달 (Shoelace <sl-dialog> 사용)
 // -----------------------------------------------------------------------------
 let dialog: any | null = null; // <sl-dialog>
 let dialogOpen = false;
@@ -88,15 +95,10 @@ function buildDialog() {
   dialog.addEventListener('sl-request-close', async (ev: any) => {
     if (programmaticHide) return;
     ev.preventDefault();
-    try {
-      await disconnect(wagmiConfig);
-    } finally {
-      programmaticHide = true;
-      dialog!.hide();
-      programmaticHide = false;
-      dialogOpen = false;
-      window.dispatchEvent(new CustomEvent('auth:signed-out'));
-    }
+    programmaticHide = true;
+    dialog!.hide();
+    programmaticHide = false;
+    dialogOpen = false;
   });
 
   cancelBtn.addEventListener('click', () => dialog!.hide());
@@ -130,17 +132,22 @@ function openSignDialog() {
 }
 
 // -----------------------------------------------------------------------------
-// 상단 Connect/Account 드롭다운
+// 상단 Connect/Account 드롭다운 렌더러
+// 상태 정의
+//  A) 토큰 있음(tokenManager.has() == true) → 계정 드롭다운
+//  B) 토큰 없음 + 지갑 연결됨 → [Sign & Continue] + [Disconnect]
+//  C) 지갑 미연결 → [Connect]
 // -----------------------------------------------------------------------------
 function renderConnect() {
   connectButtonContainer.innerHTML = '';
 
-  // 1) 토큰 보유 시 → 계정 드롭다운
+  // A) 토큰 있음 → 계정 드롭다운
   if (tokenManager.has()) {
     const address =
       getAccount(wagmiConfig).address ??
       (tokenManager.getAddress() as `0x${string}` | null) ??
       lastKnownAddress;
+
     const label = address ? shortenAddress(address) : 'Account';
 
     const btn = el('sl-button', label, { slot: 'trigger', pill: true });
@@ -185,42 +192,79 @@ function renderConnect() {
     return;
   }
 
-  // 2) 토큰 없을 때 → Connect/Disconnect 토글
-  const isConnected = getAccount(wagmiConfig).isConnected;
-  const btn = el(
-    'sl-button',
-    isConnected ? 'Disconnect' : 'Connect',
-    {
-      variant: isConnected ? 'default' : 'primary',
+  // B) 토큰 없음 + 지갑 연결됨 → [Sign & Continue] + [Disconnect]
+  const account = getAccount(wagmiConfig);
+  if (account.isConnected) {
+    const wrapper = el('div', {
+      style: { display: 'flex', gap: '8px', alignItems: 'center' }
+    });
+
+    const signBtn = el('sl-button', 'Sign & Continue', {
+      variant: 'primary',
       onclick: () => {
-        if (getAccount(wagmiConfig).isConnected) {
-          disconnect(wagmiConfig).finally(() => {
-            window.dispatchEvent(new CustomEvent('auth:signed-out'));
-          });
-        } else {
-          openWalletConnectModal();
-        }
+        (async () => {
+          try { await signAndLogin(); }
+          catch (err) {
+            console.error(err);
+            showErrorAlert('Error', err instanceof Error ? err.message : String(err));
+          }
+        })();
       }
-    }
-  );
-  connectButtonContainer.appendChild(btn);
+    });
+
+    const disconnectBtn = el('sl-button', el('sl-icon', { name: 'box-arrow-right' }), {
+      variant: 'default',
+      onclick: () => {
+        disconnect(wagmiConfig).finally(() => {
+          window.dispatchEvent(new CustomEvent('auth:signed-out'));
+        });
+      }
+    });
+
+    wrapper.append(signBtn, disconnectBtn);
+    connectButtonContainer.appendChild(wrapper);
+    return;
+  }
+
+  // C) 지갑 미연결 → [Connect]
+  const connectBtn = el('sl-button', 'Connect', {
+    variant: 'primary',
+    onclick: () => openWalletConnectModal()
+  });
+  connectButtonContainer.appendChild(connectBtn);
 }
 
 // 최초 렌더
 renderConnect();
 
-// 월렛 상태 변화
+// -----------------------------------------------------------------------------
+// 월렛 상태 변화 구독
+// -----------------------------------------------------------------------------
 watchAccount(wagmiConfig, {
   onChange(account) {
+    // 주소 캐시
     lastKnownAddress = account.address ?? lastKnownAddress;
+
+    // UI 갱신
     renderConnect();
 
-    // 조건 충족 시 서명 모달 출력
     if (account.isConnected && account.address && authInitialized && requireSignature) {
       openSignDialog();
     }
 
-    // 연결 종료 시 모달 닫고 signed-out 알림
+    // 연결 직후 자동 서명 모달 (옵션)
+    if (
+      AUTO_PROMPT_ON_CONNECT &&
+      account.isConnected &&
+      account.address &&
+      authInitialized &&
+      requireSignature &&
+      !tokenManager.has()
+    ) {
+      openSignDialog();
+    }
+
+    // 연결 끊김 → 모달 닫고 signed-out 알림
     if (!account.isConnected) {
       if (dialog?.open) {
         dialog.hide();
@@ -231,18 +275,23 @@ watchAccount(wagmiConfig, {
   }
 });
 
-// 초기 토큰 유효성 검사
+// -----------------------------------------------------------------------------
+// 초기 토큰 유효성 검사 → 상태 정합성 맞추기
+// -----------------------------------------------------------------------------
 (async function initAuth() {
   try {
     const ok = await validateToken();
     if (ok && tokenManager.has()) {
+      // 서버/클라이언트 토큰 모두 유효
       requireSignature = false;
       lastKnownAddress = (tokenManager.getAddress() as `0x${string}` | null) ?? lastKnownAddress;
     } else {
+      // 토큰 불일치/만료
       tokenManager.clear();
       requireSignature = true;
     }
   } catch {
+    // 네트워크/서버 에러 등
     tokenManager.clear();
     requireSignature = true;
   } finally {

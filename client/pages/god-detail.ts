@@ -34,6 +34,34 @@ function toImageUrl(img?: string | null) {
   catch { return `https://god-images.gaia.cc/${img}`; }
 }
 
+// 토스트 스택(최초 1회)
+let toastStack = document.getElementById('toast-stack') as HTMLDivElement | null;
+if (!toastStack) {
+  toastStack = el('div', {
+    id: 'toast-stack',
+    style: `
+        position: fixed; right: 16px; bottom: 16px; z-index: 9999;
+        display: flex; flex-direction: column; gap: 8px;
+      `
+  }) as HTMLDivElement;
+  document.body.append(toastStack);
+}
+
+function notify(variant: 'primary' | 'success' | 'neutral' | 'warning' | 'danger', message: string) {
+  const a = document.createElement('sl-alert') as any;
+  a.variant = variant;
+  a.closable = true;
+  a.duration = 3000;
+  a.toast = true;          // Shoelace 토스트 스타일
+  a.innerHTML = `
+<sl-icon slot="icon" name="${variant === 'success' ? 'check2-circle' : variant === 'warning' ? 'exclamation-triangle' : 'info-circle'}"></sl-icon>
+${message}
+`;
+  toastStack!.append(a);
+  // .show()가 있는 버전에서는 show 호출
+  (a.show?.() ?? (a.open = true));
+}
+
 // /god/:id 형태
 function parsePath(): { id: string } | null {
   const parts = window.location.pathname.split('/').filter(Boolean); // ['god', ':id']
@@ -169,8 +197,8 @@ function metaPanel(detail: NftDetail) {
   const share = el('sl-button', 'Share', {
     variant: 'default',
     onclick: async () => {
-      try { await navigator.clipboard.writeText(window.location.href); alert('Link copied'); }
-      catch { alert('Link copied'); }
+      try { await navigator.clipboard.writeText(window.location.href); notify('success', 'Link copied'); }
+      catch { notify('danger', 'Failed to copy link'); }
     }
   });
   const actions = el('div', share, { style: 'display:flex; gap:8px; margin-top:2px;' });
@@ -243,58 +271,119 @@ async function loadAndRender(root: HTMLElement) {
     const own = you && detail.holder && you.toLowerCase() === detail.holder.toLowerCase();
 
     if (own) {
-      // 에디터 카드(타이틀 + 마운트)
+      // 에디터 카드(타이틀 + 마운트 + 푸터)
       const editorWrap = el('div', {
         style: `
       border:1px solid rgba(255,255,255,0.1);
       background:rgba(255,255,255,0.04);
       border-radius:16px; padding:12px;
-      display:flex; flex-direction:column; gap:10px;
+      display:flex; flex-direction:column; gap:12px;
+      grid-column: 1 / -1; width: 100%;
     `
       });
+
+      // 타이틀(상단)
       editorWrap.append(
         el('div', 'Edit Attributes', {
           style: 'font-size:14px; font-weight:600; opacity:.9;'
         })
       );
-      const editorMount = el('div', { style: 'height: 600px' }); // 여기에 에디터 컴포넌트를 붙임
+
+      // 에디터 마운트
+      const editorMount = el('div', {
+        style: `min-height:420px; height:600px; width:100%;`
+      });
       editorWrap.append(editorMount);
 
-      // 우측 정보 패널 아래에 에디터를 붙입니다.
+      // 하단 버튼 행 (오른쪽 정렬)
+      const footerRow = el('div', {
+        style: 'display:flex; justify-content:flex-end; gap:8px;'
+      });
+
+      const resetBtn = el('sl-button', 'Reset', {
+        variant: 'default',
+        disabled: true as unknown as boolean
+      });
+
+      const saveBtn = el('sl-button', 'Save', {
+        variant: 'primary',
+        disabled: true as unknown as boolean
+      });
+
+      footerRow.append(resetBtn, saveBtn);
+      editorWrap.append(footerRow);
+
+      // 가로 전체로 펼쳐짐
       grid.append(editorWrap);
 
-      // 옵션을 준비해서 에디터 생성
-      const component = await createNftAttributeEditor({
-        traitOptions: {
-          Type: ['Stone', 'Fire', 'Water'],
-          Gender: ['Man', 'Woman'],
-        },
-        partOptions: {
-          Stone: {
-            Man: stoneManParts,
-            Woman: stoneWomanParts,
+      // 에디터 생성
+      const buildEditor = async (baseData: any) => {
+        const comp = await createNftAttributeEditor({
+          traitOptions: {
+            Type: ['Stone', 'Fire', 'Water'],
+            Gender: ['Man', 'Woman'],
           },
-          Fire: {
-            Man: fireManParts,
-            Woman: fireWomanParts,
+          partOptions: {
+            Stone: { Man: stoneManParts, Woman: stoneWomanParts },
+            Fire: { Man: fireManParts, Woman: fireWomanParts },
+            Water: { Man: waterManParts, Woman: waterWomanParts },
           },
-          Water: {
-            Man: waterManParts,
-            Woman: waterWomanParts,
-          },
-        },
-        baseData: detail,
-        keyToFrame,
-        spritesheet,
-        spritesheetImagePath: '/spritesheet.png',
-      });
+          baseData,
+          keyToFrame,
+          spritesheet,
+          spritesheetImagePath: '/spritesheet.png',
+        });
+        Object.assign(comp.el.style, { width: '100%', height: '100%' });
+        return comp;
+      };
+
+      const initialData = structuredClone(detail);
+      let component = await buildEditor(initialData);
       editorMount.append(component.el);
 
-      // 변경 이벤트가 올라오면 상단/부모가 듣도록 브로드캐스트(필요시)
-      component.on('dataChanged', (data) => {
+      // 변경사항 추적
+      let lastData: any = null;
+      const onChanged = (data: any) => {
+        lastData = data;
+        (saveBtn as any).disabled = false;
+        (resetBtn as any).disabled = false;
+
         window.dispatchEvent(new CustomEvent('god:attributesChanged', {
           detail: { id: detail.id, data }
         }));
+      };
+      component.on('dataChanged', onChanged);
+
+      // Reset: 초기 상태로 되돌림 (컴포넌트 재생성으로 확실히 복구)
+      resetBtn.addEventListener('click', async () => {
+        try {
+          editorMount.innerHTML = '';
+          component?.off?.('dataChanged', onChanged); // 지원 시 이벤트 언바인드
+          component = await buildEditor(initialData);
+          component.on('dataChanged', onChanged);
+          editorMount.append(component.el);
+          lastData = null;
+          (saveBtn as any).disabled = true;
+          (resetBtn as any).disabled = true;
+          notify('neutral', 'Changes have been reset.');
+        } catch (e) {
+          console.error(e);
+          notify('danger', 'Failed to reset.');
+        }
+      });
+
+      // Save
+      saveBtn.addEventListener('click', async () => {
+        try {
+          // TODO: 실제 저장 API 연결
+          // await saveNftAttributes(detail.id, lastData ?? component.getData?.());
+
+          (saveBtn as any).disabled = true;
+          notify('success', 'Attributes saved.');
+        } catch (e) {
+          console.error(e);
+          notify('danger', 'Failed to save. Please try again.');
+        }
       });
     }
   } catch (err) {
