@@ -1,8 +1,10 @@
 import { createAddressAvatar, shortenAddress, tokenManager } from '@gaiaprotocol/client-common';
+import { ElementType, GenderType } from '@gaiaprotocol/god-mode-shared';
 import { createNftAttributeEditor } from '@gaiaprotocol/nft-attribute-editor';
 import { el } from '@webtaku/el';
-import { fetchNftDetail } from '../api/nfts';
+import { fetchNftDetail, NftDetail } from '../api/nfts';
 import { showErrorAlert } from '../components/alert';
+import { createGodViewer } from '../components/god-viewer';
 import fireManParts from "./fire-man-parts.json" with { type: "json" };
 import fireWomanParts from "./fire-woman-parts.json" with { type: "json" };
 import keyToFrame from "./key-to-frame.json" with { type: "json" };
@@ -12,27 +14,6 @@ import stoneManParts from "./stone-man-parts.json" with { type: "json" };
 import stoneWomanParts from "./stone-woman-parts.json" with { type: "json" };
 import waterManParts from "./water-man-parts.json" with { type: "json" };
 import waterWomanParts from "./water-woman-parts.json" with { type: "json" };
-
-// ---- Types ------------------------------------------------------------------
-type NftAttribute = { trait_type?: string; value?: string | number | null };
-type NftDetail = {
-  id: string | number;
-  image?: string | null;
-  name?: string | null;
-  description?: string | null;
-  attributes?: NftAttribute[];
-  owner?: `0x${string}` | null;
-  explorerUrl?: string | null;
-  tokenUrl?: string | null;
-  type?: string | null; // e.g., 'God'
-};
-
-// ---- Helpers ----------------------------------------------------------------
-function toImageUrl(img?: string | null) {
-  if (!img) return '';
-  try { return new URL(img).href; }
-  catch { return `https://god-images.gaia.cc/${img}`; }
-}
 
 // 토스트 스택(최초 1회)
 let toastStack = document.getElementById('toast-stack') as HTMLDivElement | null;
@@ -101,7 +82,7 @@ function headerBar(detail: NftDetail) {
   const title = el('h1', 'My Gods', { style: { fontSize: '20px', fontWeight: '700', margin: '0' } });
   const sub = el(
     'div',
-    el('span', `${detail.type ?? 'God'} #${detail.id}`, { style: 'opacity:.9' }),
+    el('span', `God #${detail.id}`, { style: 'opacity:.9' }),
     { style: 'font-size:12px; color:#9CA3AF; margin-top:2px;' }
   );
   const col = el('div'); col.append(title, sub);
@@ -137,24 +118,23 @@ function imagePanel(detail: NftDetail) {
       border-radius:16px; padding:10px;
     `
   });
-  const img = el('img', '', {
-    src: toImageUrl(detail.image),
-    alt: detail.name ?? `${detail.type ?? 'God'} #${detail.id}`,
-    style: 'width:100%; border-radius:12px; background:#111; aspect-ratio:1/1; object-fit:cover;'
-  });
-  card.append(img);
+  card.append(createGodViewer({
+    type: detail.traits!.Type as ElementType,
+    gender: detail.traits!.Gender as GenderType,
+    parts: detail.parts as { [category: string]: string },
+  }));
   return card;
 }
 
 function metaPanel(detail: NftDetail) {
   const wrap = el('div', { style: 'display:flex; flex-direction:column; gap:12px;' });
 
-  const name = el('h2', detail.name ?? `${detail.type ?? 'God'} #${detail.id}`, {
+  const name = el('h2', detail.name ?? `God #${detail.id}`, {
     style: { fontSize: '18px', fontWeight: '600', margin: '0' }
   });
 
   const ownerRow = (() => {
-    const owner = detail.owner as `0x${string}` | null | undefined;
+    const owner = detail.holder as `0x${string}` | null | undefined;
     if (!owner) return null;
     const row = el('div', { style: 'display:flex; align-items:center; gap:8px; color:#9CA3AF;' });
     const avatar = createAddressAvatar(owner);
@@ -167,32 +147,39 @@ function metaPanel(detail: NftDetail) {
     ? el('p', detail.description, { style: { color: '#d1d5db', margin: '6px 0 0 0' } })
     : null;
 
-  const attrs = (detail.attributes ?? []).filter(a => a?.trait_type);
-  const attrGrid = attrs.length
-    ? el(
+  // 공용: key-value 그리드
+  const kvGrid = (title: string, entries: [string, string | number][]) => {
+    if (!entries.length) return null;
+    return el(
       'div',
-      el('h3', 'Attributes', { style: { fontSize: '14px', fontWeight: '600', margin: '0 0 4px 0' } }),
+      el('h3', title, { style: { fontSize: '14px', fontWeight: '600', margin: '0 0 4px 0' } }),
       el(
         'div',
         { style: 'display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px;' },
-        ...attrs.map(a =>
+        ...entries.map(([k, v]) =>
           el(
             'div',
-            el('div', String(a.trait_type), { style: { fontSize: '11px', color: '#9CA3AF' } }),
-            el('div', String(a.value ?? '-'), { style: { fontWeight: '600' } }),
+            el('div', String(k), { style: { fontSize: '11px', color: '#9CA3AF' } }),
+            el('div', String(v ?? '-'), { style: { fontWeight: '600' } }),
             {
               style: `
-                  border:1px solid rgba(255,255,255,0.1);
-                  background:rgba(255,255,255,0.03);
-                  border-radius:12px; padding:10px;
-                `
+                border:1px solid rgba(255,255,255,0.1);
+                background:rgba(255,255,255,0.03);
+                border-radius:12px; padding:10px;
+              `
             }
           )
         )
       ),
       { style: 'display:flex; flex-direction:column; gap:8px;' }
-    )
-    : null;
+    );
+  };
+
+  const traitEntries = Object.entries(detail.traits ?? {});
+  const partEntries = Object.entries(detail.parts ?? {});
+
+  const traitsGrid = kvGrid('Traits', traitEntries);
+  const partsGrid = kvGrid('Parts', partEntries);
 
   const share = el('sl-button', 'Share', {
     variant: 'default',
@@ -206,7 +193,8 @@ function metaPanel(detail: NftDetail) {
   wrap.append(name);
   if (ownerRow) wrap.append(ownerRow);
   if (desc) wrap.append(desc);
-  if (attrGrid) wrap.append(attrGrid);
+  if (traitsGrid) wrap.append(traitsGrid);
+  if (partsGrid) wrap.append(partsGrid);
   wrap.append(actions);
   return wrap;
 }
@@ -351,6 +339,38 @@ async function loadAndRender(root: HTMLElement) {
         window.dispatchEvent(new CustomEvent('god:attributesChanged', {
           detail: { id: detail.id, data }
         }));
+
+        // --- 미리보기 즉시 반영 ---
+        try {
+          // 현재 편집 중 데이터(lastData)가 있다면 그것을, 없으면 컴포넌트의 최신 상태를 사용
+          const next = data;
+
+          // 왼쪽 미리보기 카드 안의 내용을 교체
+          // imagePanel(detail)에서 만든 카드가 leftCol 변수에 들어있습니다.
+          // 같은 케이스로 다시 만들거나, 기존 뷰어에 setProps가 있다면 그것을 사용합니다.
+          const currentViewer = (leftCol.querySelector('[data-god-viewer="1"]') as HTMLElement | null);
+
+          if (currentViewer && (currentViewer as any).__api?.setProps) {
+            // 더 부드러운 갱신: 기존 뷰어 API 사용
+            (currentViewer as any).__api.setProps({
+              type: next.traits?.Type,
+              gender: next.traits?.Gender,
+              parts: next.parts,
+            });
+          } else {
+            // 뷰어가 없다면 새로 생성
+            leftCol.innerHTML = '';
+            leftCol.append(
+              createGodViewer({
+                type: next.traits?.Type,
+                gender: next.traits?.Gender,
+                parts: next.parts,
+              })
+            );
+          }
+        } catch (e) {
+          console.error(e);
+        }
       };
       component.on('dataChanged', onChanged);
 

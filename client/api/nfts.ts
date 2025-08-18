@@ -1,3 +1,4 @@
+import { NftData } from '@gaiaprotocol/nft-attribute-editor';
 import { getAddress } from 'viem';
 
 declare const GAIA_API_BASE_URI: string;
@@ -84,20 +85,15 @@ export async function fetchNftsByIds(params: {
   return items;
 }
 
-type NftData = {
-  collection: string;
-  id: number;
-  name: string;
-  description?: string;
-  image: string;
-  external_url?: string;
-  animation_url?: string;
-  traits?: { [traitName: string]: string | number };
-  parts: { [partName: string]: string | number };
-  holder: string;
-};
+export type NftDetail = {
+  id: string | number;
+  image?: string | null;
+  name?: string | null;
+  description?: string | null;
+  holder?: `0x${string}` | null;
+} & NftData;
 
-export async function fetchNftDetail(id: string): Promise<NftData> {
+export async function fetchNftDetail(id: string): Promise<NftDetail> {
   const res = await fetch(`${GAIA_API_BASE_URI}/nft/gaia-protocol-gods/${id}`);
   if (!res.ok) {
     const text = await res.text().catch(() => '');
