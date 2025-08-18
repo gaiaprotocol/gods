@@ -93,7 +93,7 @@ type NftData = {
   external_url?: string;
   animation_url?: string;
   traits?: { [traitName: string]: string | number };
-  parts?: { [partName: string]: string | number };
+  parts: { [partName: string]: string | number };
   holder: string;
 };
 

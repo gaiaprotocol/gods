@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@gaiaprotocol/client-common": "^0.0.7",
+    "@ionic/core": "^8.7.2",
     "@webtaku/el": "^0.0.17",
     "color": "^5.0.0",
     "marked": "^16.1.2",

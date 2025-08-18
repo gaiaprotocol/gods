@@ -1,8 +1,17 @@
 import { createAddressAvatar, shortenAddress, tokenManager } from '@gaiaprotocol/client-common';
+import { createNftAttributeEditor } from '@gaiaprotocol/nft-attribute-editor';
 import { el } from '@webtaku/el';
 import { fetchNftDetail } from '../api/nfts';
 import { showErrorAlert } from '../components/alert';
+import fireManParts from "./fire-man-parts.json" with { type: "json" };
+import fireWomanParts from "./fire-woman-parts.json" with { type: "json" };
+import keyToFrame from "./key-to-frame.json" with { type: "json" };
 import { getMyAddress } from './shared';
+import spritesheet from "./spritesheet.json" with { type: "json" };
+import stoneManParts from "./stone-man-parts.json" with { type: "json" };
+import stoneWomanParts from "./stone-woman-parts.json" with { type: "json" };
+import waterManParts from "./water-man-parts.json" with { type: "json" };
+import waterWomanParts from "./water-woman-parts.json" with { type: "json" };
 
 // ---- Types ------------------------------------------------------------------
 type NftAttribute = { trait_type?: string; value?: string | number | null };
@@ -15,7 +24,7 @@ type NftDetail = {
   owner?: `0x${string}` | null;
   explorerUrl?: string | null;
   tokenUrl?: string | null;
-  type?: string | null; // e.g., "God"
+  type?: string | null; // e.g., 'God'
 };
 
 // ---- Helpers ----------------------------------------------------------------
@@ -59,7 +68,7 @@ function headerBar(detail: NftDetail) {
     style: 'display:flex; align-items:center; justify-content:space-between; gap:12px;'
   });
 
-  // Left: "My Gods" (동일 스타일) + 서브
+  // Left: 'My Gods' (동일 스타일) + 서브
   const left = el('div', { style: 'display:flex; align-items:flex-start; gap:10px; min-width:0;' });
   const title = el('h1', 'My Gods', { style: { fontSize: '20px', fontWeight: '700', margin: '0' } });
   const sub = el(
@@ -157,8 +166,6 @@ function metaPanel(detail: NftDetail) {
     )
     : null;
 
-  const you = getMyAddress();
-  const own = you && detail.owner && you.toLowerCase() === detail.owner.toLowerCase();
   const share = el('sl-button', 'Share', {
     variant: 'default',
     onclick: async () => {
@@ -227,7 +234,69 @@ async function loadAndRender(root: HTMLElement) {
     headerArea.replaceWith(header);
 
     grid.innerHTML = '';
-    grid.append(imagePanel(detail), metaPanel(detail));
+    const leftCol = imagePanel(detail);
+    const rightCol = metaPanel(detail);
+    grid.append(leftCol, rightCol);
+
+    // --- 여기서부터 추가: 내가 소유한 경우 에디터 렌더 ---
+    const you = getMyAddress();
+    const own = you && detail.holder && you.toLowerCase() === detail.holder.toLowerCase();
+
+    if (own) {
+      // 에디터 카드(타이틀 + 마운트)
+      const editorWrap = el('div', {
+        style: `
+      border:1px solid rgba(255,255,255,0.1);
+      background:rgba(255,255,255,0.04);
+      border-radius:16px; padding:12px;
+      display:flex; flex-direction:column; gap:10px;
+    `
+      });
+      editorWrap.append(
+        el('div', 'Edit Attributes', {
+          style: 'font-size:14px; font-weight:600; opacity:.9;'
+        })
+      );
+      const editorMount = el('div', { style: 'height: 600px' }); // 여기에 에디터 컴포넌트를 붙임
+      editorWrap.append(editorMount);
+
+      // 우측 정보 패널 아래에 에디터를 붙입니다.
+      grid.append(editorWrap);
+
+      // 옵션을 준비해서 에디터 생성
+      const component = await createNftAttributeEditor({
+        traitOptions: {
+          Type: ['Stone', 'Fire', 'Water'],
+          Gender: ['Man', 'Woman'],
+        },
+        partOptions: {
+          Stone: {
+            Man: stoneManParts,
+            Woman: stoneWomanParts,
+          },
+          Fire: {
+            Man: fireManParts,
+            Woman: fireWomanParts,
+          },
+          Water: {
+            Man: waterManParts,
+            Woman: waterWomanParts,
+          },
+        },
+        baseData: detail,
+        keyToFrame,
+        spritesheet,
+        spritesheetImagePath: '/spritesheet.png',
+      });
+      editorMount.append(component.el);
+
+      // 변경 이벤트가 올라오면 상단/부모가 듣도록 브로드캐스트(필요시)
+      component.on('dataChanged', (data) => {
+        window.dispatchEvent(new CustomEvent('god:attributesChanged', {
+          detail: { id: detail.id, data }
+        }));
+      });
+    }
   } catch (err) {
     console.error(err);
     grid.innerHTML = '';

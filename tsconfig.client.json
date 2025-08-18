@@ -20,10 +20,12 @@
     "skipLibCheck": true,
     "strict": true,
     "rootDir": "./client",
-    "outDir": "dist"
+    "outDir": "dist",
+    "resolveJsonModule": true,
   },
   "include": [
     "./client",
+    "./client/pages/*.json",
   ],
   "exclude": [
     "node_modules",

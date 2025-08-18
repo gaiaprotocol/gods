@@ -1,0 +1,10 @@
+@import "@ionic/core/css/core.css";
+@import "@ionic/core/css/palettes/dark.always.css";
+
+ion-card-title {
+  padding: 16px;
+}
+
+ion-chip {
+  border: 1px solid rgba(var(--ion-color-base-rgb), 0.32);
+}
