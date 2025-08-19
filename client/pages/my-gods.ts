@@ -199,6 +199,6 @@ async function loadAndRender(root: HTMLElement) {
 
   loadAndRender(root);
 
-  window.addEventListener('auth:signed-in', () => loadAndRender(root));
-  window.addEventListener('auth:signed-out', () => loadAndRender(root));
+  tokenManager.on('signedIn', () => loadAndRender(root));
+  tokenManager.on('signedOut', () => loadAndRender(root));
 })();

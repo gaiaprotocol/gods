@@ -2,6 +2,7 @@ import { createAddressAvatar, shortenAddress, tokenManager } from '@gaiaprotocol
 import { ElementType, GenderType } from '@gaiaprotocol/god-mode-shared';
 import { createNftAttributeEditor } from '@gaiaprotocol/nft-attribute-editor';
 import { el } from '@webtaku/el';
+import { saveNftAttributes } from '../api/god-metadata';
 import { fetchNftDetail, NftDetail } from '../api/nfts';
 import { showErrorAlert } from '../components/alert';
 import { createGodViewer } from '../components/god-viewer';
@@ -298,6 +299,27 @@ async function loadAndRender(root: HTMLElement) {
         disabled: true as unknown as boolean
       });
 
+      // Save
+      saveBtn.addEventListener('click', async () => {
+        try {
+          (saveBtn as any).disabled = true;
+          (saveBtn as any).loading = true;  // Shoelace 로딩 스피너
+
+          await saveNftAttributes(detail.id, lastData);
+
+          // 저장 성공 후 상태 초기화
+          lastData = null;
+          (resetBtn as any).disabled = true;
+          notify('success', 'Attributes saved.');
+        } catch (e) {
+          console.error(e);
+          notify('danger', e instanceof Error ? e.message : 'Failed to save. Please try again.');
+          (saveBtn as any).disabled = false; // 실패 시 다시 활성화
+        } finally {
+          (saveBtn as any).loading = false;
+        }
+      });
+
       footerRow.append(resetBtn, saveBtn);
       editorWrap.append(footerRow);
 
@@ -391,20 +413,6 @@ async function loadAndRender(root: HTMLElement) {
           notify('danger', 'Failed to reset.');
         }
       });
-
-      // Save
-      saveBtn.addEventListener('click', async () => {
-        try {
-          // TODO: 실제 저장 API 연결
-          // await saveNftAttributes(detail.id, lastData ?? component.getData?.());
-
-          (saveBtn as any).disabled = true;
-          notify('success', 'Attributes saved.');
-        } catch (e) {
-          console.error(e);
-          notify('danger', 'Failed to save. Please try again.');
-        }
-      });
     }
   } catch (err) {
     console.error(err);
@@ -428,6 +436,6 @@ async function loadAndRender(root: HTMLElement) {
 
   loadAndRender(root);
 
-  window.addEventListener('auth:signed-in', () => loadAndRender(root));
-  window.addEventListener('auth:signed-out', () => loadAndRender(root));
+  tokenManager.on('signedIn', () => loadAndRender(root));
+  tokenManager.on('signedOut', () => loadAndRender(root));
 })();

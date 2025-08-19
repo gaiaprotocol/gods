@@ -58,9 +58,6 @@ async function signAndLogin(): Promise<void> {
 
   // 상단 메뉴 갱신
   renderConnect();
-
-  // 앱에 로그인 알림
-  window.dispatchEvent(new CustomEvent('auth:signed-in', { detail: { address } }));
 }
 
 // -----------------------------------------------------------------------------
@@ -179,7 +176,6 @@ function renderConnect() {
           requireSignature = true;
           lastKnownAddress = null;
 
-          window.dispatchEvent(new CustomEvent('auth:signed-out'));
           renderConnect();
         }
       } catch (err) {
@@ -215,9 +211,8 @@ function renderConnect() {
     const disconnectBtn = el('sl-button', el('sl-icon', { name: 'box-arrow-right' }), {
       variant: 'default',
       onclick: () => {
-        disconnect(wagmiConfig).finally(() => {
-          window.dispatchEvent(new CustomEvent('auth:signed-out'));
-        });
+        tokenManager.clear();
+        disconnect(wagmiConfig);
       }
     });
 
@@ -270,7 +265,6 @@ watchAccount(wagmiConfig, {
         dialog.hide();
         dialogOpen = false;
       }
-      window.dispatchEvent(new CustomEvent('auth:signed-out'));
     }
   }
 });
