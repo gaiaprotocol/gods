@@ -25,7 +25,7 @@
   },
   "include": [
     "./client",
-    "./client/pages/*.json",
+    "./client/data/*.json",
   ],
   "exclude": [
     "node_modules",

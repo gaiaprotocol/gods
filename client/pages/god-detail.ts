@@ -6,15 +6,15 @@ import { saveNftAttributes } from '../api/god-metadata';
 import { fetchNftDetail, NftDetail } from '../api/nfts';
 import { showErrorAlert } from '../components/alert';
 import { createGodViewer } from '../components/god-viewer';
-import fireManParts from "./fire-man-parts.json" with { type: "json" };
-import fireWomanParts from "./fire-woman-parts.json" with { type: "json" };
-import keyToFrame from "./key-to-frame.json" with { type: "json" };
+import fireManParts from '../data/fire-man-parts.json' with { type: 'json' };
+import fireWomanParts from '../data/fire-woman-parts.json' with { type: 'json' };
+import keyToFrame from '../data/key-to-frame.json' with { type: 'json' };
 import { getMyAddress } from './shared';
-import spritesheet from "./spritesheet.json" with { type: "json" };
-import stoneManParts from "./stone-man-parts.json" with { type: "json" };
-import stoneWomanParts from "./stone-woman-parts.json" with { type: "json" };
-import waterManParts from "./water-man-parts.json" with { type: "json" };
-import waterWomanParts from "./water-woman-parts.json" with { type: "json" };
+import spritesheet from '../data/spritesheet.json' with { type: 'json' };
+import stoneManParts from '../data/stone-man-parts.json' with { type: 'json' };
+import stoneWomanParts from '../data/stone-woman-parts.json' with { type: 'json' };
+import waterManParts from '../data/water-man-parts.json' with { type: 'json' };
+import waterWomanParts from '../data/water-woman-parts.json' with { type: 'json' };
 
 // 토스트 스택(최초 1회)
 let toastStack = document.getElementById('toast-stack') as HTMLDivElement | null;
@@ -36,7 +36,7 @@ function notify(variant: 'primary' | 'success' | 'neutral' | 'warning' | 'danger
   a.duration = 3000;
   a.toast = true;          // Shoelace 토스트 스타일
   a.innerHTML = `
-<sl-icon slot="icon" name="${variant === 'success' ? 'check2-circle' : variant === 'warning' ? 'exclamation-triangle' : 'info-circle'}"></sl-icon>
+<sl-icon slot='icon' name='${variant === 'success' ? 'check2-circle' : variant === 'warning' ? 'exclamation-triangle' : 'info-circle'}'></sl-icon>
 ${message}
 `;
   toastStack!.append(a);
