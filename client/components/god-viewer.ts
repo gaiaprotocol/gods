@@ -44,7 +44,7 @@ export function createGodViewer(metadata: GodMetadata) {
   const loading = createShoelaceSpinner();
   container.appendChild(loading);
 
-  const world = new World({ width: 1024, height: 1024 });
+  const world = new World({ width: 1024, height: 1024, backgroundColor: 0x000000 });
   world.container.style.width = '100%';
   world.container.style.height = '100%';
   container.appendChild(world.container);
