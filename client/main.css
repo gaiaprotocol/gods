@@ -1,5 +1,6 @@
 @import "@ionic/core/css/core.css";
 @import "@ionic/core/css/palettes/dark.always.css";
+@import "./theme.css";
 
 ion-card-title {
   padding: 16px;
