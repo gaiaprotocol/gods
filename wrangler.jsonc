@@ -29,6 +29,15 @@
 		"ALLOWED_URI": "https://gods.gaia.cc",
 		"MESSAGE_FOR_WALLET_LOGIN": "Please sign this message to log in to Gods."
 	},
+	"rules": [
+		{
+			"type": "Data",
+			"globs": [
+				"**/*.bin",
+				"**/*.png"
+			]
+		}
+	],
 	"env": {
 		"development": {
 			"kv_namespaces": [

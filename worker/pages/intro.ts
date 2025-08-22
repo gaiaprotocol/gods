@@ -14,7 +14,7 @@ function intro() {
 
       // Hero
       h('section.relative.flex.flex-col.items-center.justify-center.text-center.h-[70vh].space-y-6.px-4',
-        h('h1.text-6xl.font-serif.font-bold.text-yellow-400.tracking-widest', 'THE GODS'),
+        h('h1.text-6xl.text-yellow-400.tracking-widest.font-trojan-pro', 'The Gods'),
         h('p.text-lg.max-w-xl.text-gray-400',
           'A membership NFT collection of Gaia Protocol consisting of 3,333 NFTs. Highly customizable avatars and powerful benefits await.'
         ),
@@ -26,14 +26,15 @@ function intro() {
         }, 'View on OpenSea')
       ),
 
-      // Benefits Section with Tabs
+      // Benefits Section (탭 → 카드 그리드)
       h('main.relative.py-16',
         h('div.container.mx-auto.px-4.space-y-12',
 
-          h('h2.text-4xl.font-bold.text-center.text-white.mb-4', 'Holder Benefits'),
+          h('h2.text-4xl.font-bold.text-center.text-white.mb-8', 'Holder Benefits'),
 
-          h('sl-tab-group.tab-benefits', { class: 'max-w-4xl.mx-auto' },
-            ...[
+          // 그리드 래아웃: 1열 → (sm) 2열 → (lg) 3열
+          (() => {
+            const benefits = [
               {
                 label: 'Avatars',
                 title: 'Customizable Avatars',
@@ -70,25 +71,31 @@ function intro() {
                 desc: '200% boosted clan funds based on member holding points. (Coming soon)',
                 image: 'https://common-resources.gaia.cc/covers/gaia-clans.jpg',
               },
-            ].map((benefit, i) => [
-              h('sl-tab', { slot: 'nav', panel: `panel-${i}` }, benefit.label),
-              h('sl-tab-panel', { name: `panel-${i}` },
+            ];
+
+            return h(
+              'div.grid.grid-cols-1.sm:grid-cols-2.lg:grid-cols-3.gap-6',
+              ...benefits.map((b) =>
                 h('sl-card', {
-                  class: 'overflow-hidden',
+                  class: 'overflow-hidden hover:shadow-xl transition-shadow duration-200',
                   style: { backgroundColor: '#1f2937' }
                 },
                   h('img', {
                     slot: 'image',
-                    src: benefit.image,
-                    alt: benefit.title,
-                    class: 'w-full object-cover h-64',
+                    src: b.image,
+                    alt: b.title,
+                    class: 'w-full object-cover h-48'
                   }),
-                  h('strong.text-lg.text-yellow-300', benefit.title),
-                  h('p.text-sm.text-gray-300.mt-2', benefit.desc)
+                  h('div.flex.items-center.justify-between.mb-1',
+                    h('strong.text-base.uppercase.tracking-wide.text-yellow-300', b.label),
+                    h('span.text-xs.text-gray-400', 'Benefit')
+                  ),
+                  h('h3.text-lg.text-white.mt-1', b.title),
+                  h('p.text-sm.text-gray-300.mt-2', b.desc)
                 )
               )
-            ]).flat()
-          )
+            );
+          })()
         )
       ),
 

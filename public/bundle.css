@@ -2213,6 +2213,18 @@ ion-card-title {
 ion-chip {
   border: 1px solid rgba(var(--ion-color-base-rgb), 0.32);
 }
+
+@font-face {
+  font-family: 'Trajan Pro';
+  font-style: normal;
+  font-weight: normal;
+  src: url("/fonts/trajan-pro.woff") format("woff");
+}
+
+.font-trojan-pro {
+  margin-top: 4px;
+  font-family: 'Trajan Pro';
+}
 /* ===== 공통 변수 ===== */
 .nft-attribute-editor {
   --tile-width: 168px;
