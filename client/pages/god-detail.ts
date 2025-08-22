@@ -119,11 +119,13 @@ function imagePanel(detail: NftDetail) {
       border-radius:16px; padding:10px;
     `
   });
-  card.append(createGodViewer({
+  const viewer = createGodViewer({
     type: detail.traits!.Type as ElementType,
     gender: detail.traits!.Gender as GenderType,
     parts: detail.parts as { [category: string]: string },
-  }));
+  });
+  viewer.style.borderRadius = '12px';
+  card.append(viewer);
   return card;
 }
 

@@ -28,7 +28,6 @@ export function createGodViewer(metadata: GodMetadata) {
   container.style.width = '100%';
   container.style.aspectRatio = '1';
   container.style.position = 'relative';
-  container.style.borderRadius = '12px';
   container.style.overflow = 'hidden';
 
   const selectedParts = getSelectedParts(metadata);
