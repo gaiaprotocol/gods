@@ -3,9 +3,12 @@ const webpack = require('webpack');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
 module.exports = {
-  entry: './client/main.ts',
+  entry: {
+    bundle: './client/main.ts',
+    viewer: './client/viewer.ts',
+  },
   output: {
-    filename: 'bundle.js',
+    filename: '[name].js',
     path: path.resolve(__dirname, './public')
   },
   module: {
@@ -55,7 +58,7 @@ module.exports = {
     },
   },
   plugins: [
-    new MiniCssExtractPlugin({ filename: 'styles.css' }),
+    new MiniCssExtractPlugin({ filename: '[name].css' }),
     new webpack.DefinePlugin({
       GAIA_API_BASE_URI: JSON.stringify(
         process.env.NODE_ENV === 'production'
