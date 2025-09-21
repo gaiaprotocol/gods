@@ -8,13 +8,13 @@ import { showErrorAlert } from '../components/alert';
 import { createGodViewer } from '../components/god-viewer';
 import fireManParts from '../data/fire-man-parts.json' with { type: 'json' };
 import fireWomanParts from '../data/fire-woman-parts.json' with { type: 'json' };
+import frames from '../data/frames.json' with { type: 'json' };
 import keyToFrame from '../data/key-to-frame.json' with { type: 'json' };
-import { getMyAddress } from './shared';
-import spritesheet from '../data/spritesheet.json' with { type: 'json' };
 import stoneManParts from '../data/stone-man-parts.json' with { type: 'json' };
 import stoneWomanParts from '../data/stone-woman-parts.json' with { type: 'json' };
 import waterManParts from '../data/water-man-parts.json' with { type: 'json' };
 import waterWomanParts from '../data/water-woman-parts.json' with { type: 'json' };
+import { getMyAddress } from './shared';
 
 // 토스트 스택(최초 1회)
 let toastStack = document.getElementById('toast-stack') as HTMLDivElement | null;
@@ -98,10 +98,10 @@ function headerBar(detail: NftDetail) {
       else window.location.assign('/my-gods');
     }
   });
-  const explorerBtn = el('sl-button', 'View on Explorer', {
+  const explorerBtn = el('sl-button', 'View on OpenSea', {
     variant: 'primary',
     onclick: () => {
-      const url = `https://etherscan.io/nft/0x134590acb661da2b318bcde6b39ef5cf8208e372/${detail.id}`;
+      const url = `https://opensea.io/item/ethereum/0x134590acb661da2b318bcde6b39ef5cf8208e372/${detail.id}`;
       if (url) window.open(url, '_blank', 'noopener,noreferrer');
     },
   });
@@ -342,7 +342,7 @@ async function loadAndRender(root: HTMLElement) {
           },
           baseData,
           keyToFrame,
-          spritesheet,
+          frames,
           spritesheetImagePath: '/spritesheet.png',
         });
         Object.assign(comp.el.style, { width: '100%', height: '100%' });

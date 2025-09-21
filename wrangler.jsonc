@@ -40,6 +40,13 @@
 	],
 	"env": {
 		"development": {
+			"assets": {
+				"directory": "./public-dev",
+				"not_found_handling": "single-page-application",
+				"run_worker_first": [
+					"/api/*"
+				]
+			},
 			"kv_namespaces": [
 				{
 					"binding": "SIWE_NONCES",

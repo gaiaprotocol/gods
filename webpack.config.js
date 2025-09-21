@@ -9,7 +9,7 @@ module.exports = {
   },
   output: {
     filename: '[name].js',
-    path: path.resolve(__dirname, './public')
+    path: path.resolve(__dirname, process.env.NODE_ENV === 'production' ? './public' : './public-dev')
   },
   module: {
     rules: [
@@ -55,6 +55,7 @@ module.exports = {
       react: path.resolve(__dirname, 'node_modules/react'),
       'react-dom': path.resolve(__dirname, 'node_modules/react-dom'),
       '@tanstack/react-query': path.resolve(__dirname, 'node_modules/@tanstack/react-query'),
+      '@react-native-async-storage/async-storage': false,
     },
   },
   plugins: [
