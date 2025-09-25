@@ -39,37 +39,37 @@ function intro() {
                 label: 'Avatars',
                 title: 'Customizable Avatars',
                 desc: 'Express your identity with highly customizable NFT avatars.',
-                image: 'https://common-resources.gaia.cc/covers/thegods.jpg',
+                image: '/images/covers/thegods.jpg',
               },
               {
                 label: 'Gaia Name',
                 title: 'Gaia Name',
                 desc: 'Claim your unique Gaia Name used across the Gaia ecosystem.',
-                image: 'https://common-resources.gaia.cc/covers/gaia-names.png',
+                image: '/images/covers/gaia-names.png',
               },
               {
                 label: 'Personas',
                 title: 'Boosted Earnings in Gaia Personas',
                 desc: 'Enjoy 200% trading revenue from Gaia Personas. (Coming soon)',
-                image: 'https://common-resources.gaia.cc/covers/gaia-personas.jpg',
+                image: '/images/covers/gaia-personas.jpg',
               },
               {
                 label: 'Points',
                 title: 'Holding Points',
                 desc: 'Earn 10,000 holding points per NFT to increase your trading rewards.',
-                image: 'https://common-resources.gaia.cc/covers/holding-points.jpg',
+                image: '/images/covers/holding-points.jpg',
               },
               {
                 label: 'topic.trade',
                 title: 'Enhanced topic.trade Returns',
                 desc: 'Up to 200% boosted trading revenue based on holding points. (Coming soon)',
-                image: 'https://common-resources.gaia.cc/covers/topictrade.jpg',
+                image: '/images/covers/topictrade.jpg',
               },
               {
                 label: 'Clans',
                 title: 'Clan Operational Funding',
                 desc: '200% boosted clan funds based on member holding points. (Coming soon)',
-                image: 'https://common-resources.gaia.cc/covers/gaia-clans.jpg',
+                image: '/images/covers/gaia-clans.jpg',
               },
             ];
 
